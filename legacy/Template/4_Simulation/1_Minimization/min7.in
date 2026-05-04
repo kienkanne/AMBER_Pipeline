@@ -1,0 +1,9 @@
+Minimization step 7
+&cntrl
+  imin=1, 
+  ncyc=1000, 
+  maxcyc=5000, 
+  ntpr=50, 
+  cut=8, 
+  iwrap=1, 
+/

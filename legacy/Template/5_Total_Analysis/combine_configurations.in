@@ -1,0 +1,15 @@
+parm prmtop
+
+trajin md_seed_0.nc
+trajin md_seed_1.nc
+trajin md_seed_2.nc
+trajin md_seed_3.nc
+trajin md_seed_4.nc
+trajin md_seed_5.nc
+trajin md_seed_6.nc
+
+reference final.pdb [PRO]
+autoimage
+rms ALL ref [PRO] @CA out rmsd_all.dat
+
+trajout md_all.nc

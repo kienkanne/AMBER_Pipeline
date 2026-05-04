@@ -1,0 +1,19 @@
+parm ../prmtop
+trajin ../md_all.nc
+
+autoimage anchor @CA
+rms first @N,C,CA
+average @N,C,CA crdset trajaverage
+createcrd trajectory
+run
+
+crdaction trajectory rms ref trajaverage @N,C,CA
+crdaction trajectory matrix covar name covmatrix @N,C,CA
+runanalysis diagmatrix covmatrix out evecs.dat vecs 10 name eigenvectors \
+nmwiz nmwizvecs 10 nmwizfile normalmodes.nmd nmwizmask @N,C,CA
+
+crdaction trajectory projection modes eigenvectors beg 1 end 10 \
+@N,C,CA out pca_protein.dat
+
+quit
+

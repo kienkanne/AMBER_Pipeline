@@ -1,0 +1,4 @@
+Copy your prmtop and eq_.ncrst file into the template file
+Run the create seeds script
+Distribute the seeds to different workstations to start running
+Note down which workstations are running and the duration here:
