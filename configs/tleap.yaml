@@ -1,0 +1,4 @@
+forcefield: ff19SB # Case sensitive
+water_model: opc # Case sensitive
+box_type: oct
+box_size: 12.0
