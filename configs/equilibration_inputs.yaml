@@ -1,0 +1,12 @@
+# number of equilibration runs to perform
+n_eq_runs: 7
+# timestep
+dt: 0.002
+# temperature for equilibration in K
+temp: 300.0
+# total time for each equilibration run in ps
+eq_time: 100.0
+# nonbonded cutoff distance
+cut: 10.0
+# restraint weight for each equilibration run in kcal/mol, should have the same length as n_eq_runs
+restraint: [10.0, 5.0, 2.0, 1.0, 0.5, 0.1, 0.0] 

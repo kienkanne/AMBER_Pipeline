@@ -2,19 +2,10 @@ import subprocess
 import os
 import re
 from string import Template
-from src.config import CONFIGS_ROOT
-from src.config import SRC_ROOT
-from configs.config_loader import load_config
 
-# Extract parameters from config
-cfg = load_config(CONFIGS_ROOT / "tleap.yaml")
+from src.config import TEMPLATE_DIR
 
-forcefield = cfg["forcefield"]
-water_model = cfg["water_model"]
-box_type = cfg["box_type"]
-box_size = cfg["box_size"]
-
-with open(SRC_ROOT / "ambertools" / "tleap_template.txt") as f:
+with open(TEMPLATE_DIR / "tleap_template.txt") as f:
     tleap_template = f.read()
 
 # Volume parsing function to calculate number of ions for 0.15 M solution
@@ -25,9 +16,16 @@ def parse_volume(tleap_output):
     return float(match.group(1))
 
 # Run tleap twice: first to get volume and calculate ions, then with ions
-def run_tleap(protein_pdb):
+def run_tleap(protein_pdb, cfg):
+    # Extract parameters from config
+    forcefield = cfg["forcefield"]
+    water_model = cfg["water_model"]
+    box_type = cfg["box_type"]
+    box_size = cfg["box_size"]
+
     # Extract the base name of the protein PDB file without extension
-    name = os.path.splitext(os.path.basename(protein_pdb))[0]
+    filename = os.path.basename(protein_pdb)
+    name = filename.split('.')[0]   
 
     # Substitute parameters into the tleap template
     tleap_input = Template(tleap_template).substitute(
@@ -88,6 +86,3 @@ def run_tleap(protein_pdb):
         print("STDERR:\n", result_with_ions.stderr)
     else:
         print("TLEAP WITH IONS SUCCESS")
-
-# Test run
-run_tleap(SRC_ROOT / "ambertools" /"2BPW_apo.pdb")
