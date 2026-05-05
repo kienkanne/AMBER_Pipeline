@@ -7,7 +7,7 @@ from amber_pipeline.workflows.heating import HeatingWorkflow
 from amber_pipeline.workflows.equilibration import EquilibrationWorkflow
 from amber_pipeline.workflows.production import ProductionWorkflow
 from amber_pipeline.utils.timing import timed
-from amber_pipeline.utils.logging_utils import setup_logger
+from amber_pipeline.utils.central_logging import setup_all_logs, run_stage
 import logging
 
 class Orchestrator:
@@ -26,37 +26,38 @@ class Orchestrator:
             inpcrd = Path(self.cfg.common.inpcrd)
             mask = str(self.cfg.common.mask)
 
+            name = os.path.basename(prmtop).split('.')[0]
             output_dir = Path(__file__).resolve().parents[2] / "outputs" / f"{name}_{self.pid}"
             output_dir.mkdir(parents=True, exist_ok=True)
-            setup_logger(Path(output_dir) / "run.log")
-            logger = logging.getLogger(__name__)
 
-            logger.info("Starting pipeline")
+            logs = setup_all_logs(
+                "Dialanine_test",
+                output_dir / "run.log",
+                output_dir / "manifest.json",
+                output_dir / "state.json"
+            )
 
             min_wf = MinimizationWorkflow(self.cfg.minimization)
-            last_min = min_wf.run(prmtop, inpcrd, wd)
-            logger.info("Minimization completed")
+            last_min = run_stage(logs, "Minimization", min_wf.run, prmtop, inpcrd, wd)
 
             heat_wf = HeatingWorkflow(self.cfg.heating)
-            heat_wf.run(prmtop, mask, wd, last_min)
-            logger.info("Heating completed")
+            run_stage(logs, "Heating", heat_wf.run, prmtop, mask, wd, last_min)
 
             eq_wf = EquilibrationWorkflow(self.cfg.equilibration)
-            last_eq = eq_wf.run(prmtop, mask, wd)
-            logger.info("Equilibration completed")
+            last_eq = run_stage(logs, "Equilibration", eq_wf.run, prmtop, mask, wd)
 
             prod_wf = ProductionWorkflow(self.cfg.production)
-            prod_wf.run(prmtop, mask, wd, last_eq)
-            logger.info("Production completed")
+            run_stage(logs, "Prduction", prod_wf.run, prmtop, mask, wd, last_eq, last=True)
 
             # Copy selected files to outputs
-            name = os.path.basename(prmtop).split('.')[0]
-
-            targeted_copy = ["*.out", "prod*.nc", "prod*.ncrst"]
+            targeted_copy = ["*.out", "*.log", "*.json", "prod*.nc", "prod*.ncrst"]
             for target in targeted_copy:
                 for file_path in wd.glob(f"{target}"):
                     shutil.copy2(file_path, output_dir)
-                    
+            
+            completed_run = output_dir.with_name(f"Success_{name}_{self.pid}")
+            output_dir.rename(completed_run)
+
             # Optionally clean up scratch
             if cleanup:
                 shutil.rmtree(wd)
