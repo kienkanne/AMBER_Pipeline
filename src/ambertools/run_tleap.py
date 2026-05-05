@@ -5,6 +5,10 @@ from string import Template
 
 from src.config import TEMPLATE_DIR
 
+AMBERHOME = os.environ.get("AMBERHOME")
+if not AMBERHOME:
+    raise RuntimeError("AMBERHOME environment variable not set")
+
 with open(TEMPLATE_DIR / "tleap_template.txt") as f:
     tleap_template = f.read()
 

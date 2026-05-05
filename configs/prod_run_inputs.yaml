@@ -1,0 +1,14 @@
+# number of randomized seeds to run
+num_seeds: 1
+# temperature for randomization and production in K
+temp: 300.0
+# timestep
+dt: 0.002
+# equilbiration time for randomization step in ps
+rand_time: 200.0
+# total time for production run in ps
+prod_time: 250.0 ### Short for testing 
+# report frequencies for production run in ps
+prod_freq: 5.0
+# nonbonded cutoff distance
+cut: 10.0

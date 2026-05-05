@@ -1,5 +1,6 @@
 import os
 from string import Template
+from pathlib import Path
 
 from src.config import TEMPLATE_DIR
 from src.ambertools.run_pmemd import run_pmemd
@@ -12,13 +13,13 @@ def equilibrate(prmtop, mask, working_dir, cfg):
     n_eq_runs: int = cfg["n_eq_runs"]
     dt: float = cfg["dt"]
     temp: float = cfg["temp"]
-    time: float = cfg["time"] # in ps
+    eq_time: float = cfg["eq_time"] # in ps
     cut: float = cfg["cut"]
     restraint: list = cfg["restraint"]
 
     # Calculate variables for equilibration input template
-    nstlim = int((time * 1000) / dt) # convert time from ps to steps
-    ntpr, ntwx, ntwr = nstlim // 1000, nstlim // 1000, nstlim // 1000 # print/write frequencies (every 1000 steps)
+    nstlim = int((eq_time) / dt) # convert time from ps to steps
+    ntpr = ntwx = ntwr = int(nstlim // 1000) # print/write frequencies (every 1000 steps)
 
     # Make sure the folder exists and contains the necessary files
     if not os.path.exists(working_dir):
@@ -30,7 +31,7 @@ def equilibrate(prmtop, mask, working_dir, cfg):
     The output coordinates are saved as eq{run}.ncrst'''
 
     for run in range(1, n_eq_runs + 1):
-        # Substitute parameters into the equilibration template for subsequent runs
+        # Substitute parameters into the equilibration template
         eq_input = Template(eq_template).substitute(
             dt=dt,
             temp=temp,
@@ -43,8 +44,10 @@ def equilibrate(prmtop, mask, working_dir, cfg):
             mask=mask
         )
         if run == 1:
-            run_pmemd(eq_input, prmtop, f"{working_dir} / heat.ncrst", f"eq{run}")
+            ncrst = Path(working_dir) / f"heat.ncrst"
+            run_pmemd(eq_input, prmtop, ncrst, working_dir, f"eq{run}")
         else:
-            run_pmemd(eq_input, prmtop, f"{working_dir} / eq{run - 1}.ncrst", f"eq{run}")
+            ncrst = Path(working_dir) / f"eq{run - 1}.ncrst"
+            run_pmemd(eq_input, prmtop, ncrst, working_dir, f"eq{run}")
 
     print ("Equilibration completed")
