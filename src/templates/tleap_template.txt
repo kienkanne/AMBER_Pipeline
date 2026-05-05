@@ -14,5 +14,5 @@ addIonsRand COM Cl- 0
 addIonsRand COM Na+ $n_ions
 addIonsRand COM Cl- $n_ions
 
-saveamberparm COM "$name.prmtop" "$name.inpcrd"
+saveamberparm COM "$working_dir/$name.prmtop" "$working_dir/$name.inpcrd"
 quit

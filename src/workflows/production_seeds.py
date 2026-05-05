@@ -2,68 +2,68 @@ import os
 from pathlib import Path
 from string import Template
 
-from src.config import TEMPLATE_DIR
 from src.ambertools.run_pmemd import run_pmemd
 
-with open(TEMPLATE_DIR / "rand_template.txt") as f:
+with open(Path(__file__).resolve().parents[1] / "templates" / "rand_template.txt") as f:
     rand_template = f.read()
 
-with open(TEMPLATE_DIR / "prod_template.txt") as f:
+with open(Path(__file__).resolve().parents[1] / "templates" / "prod_template.txt") as f:
     prod_template = f.read()
 
-def prod_seeds(prmtop, mask, working_dir, cfg, n_eq_runs):
-    # Make sure the folder exists and contains the necessary files
-    if not os.path.exists(working_dir):
-        os.makedirs(working_dir)
+'''Randomization takes the output coordinates of the last equilibration step and resets the velocities.
+The output coordinates are saved as rand{seed}.ncrst'''
 
-    # Load equilibration parameters from config file
-    num_seeds: int = cfg["num_seeds"]
-    temp: float = cfg["temp"]
-    dt: float = cfg["dt"]
-    rand_time: float = cfg["rand_time"] # in ps
-    prod_time: float = cfg["prod_time"] # in ps
-    prod_freq: float = cfg["prod_freq"] # in ps
-    cut: float = cfg["cut"]
-    
-    # Substitute parameters into the randomization template
-    nstlim = int((rand_time) / dt) # convert time from ps to steps
-    ntpr = ntwx = ntwr = int(nstlim // 1000) # print/write frequencies (every 1000 steps)
+'''Production run takes the output coordinates of the last equilibration step and runs for a long time. 
+The output coordinates are saved as prod{seed}.ncrst'''
 
-    rand_input = Template(rand_template).substitute(
-        dt=dt,
-        temp=temp,
-        cut=cut,
-        nstlim=nstlim,
-        ntpr=ntpr,
-        ntwx=ntwx,
-        ntwr=ntwr,
-        mask=mask
-    )
+class ProductionWorkflow:
+    def __init__(self, cfg):
+        self.cfg = cfg
 
-    # Substitute parameters into the production template
-    nstlim = int((prod_time) / dt) # convert time from ps to steps
-    ntpr = ntwx = ntwr = int(nstlim // prod_freq) # print/write frequencies (every 1000 steps)
+    def run(self, prmtop: Path, mask: str, working_dir: Path, last_eq_ncrst: Path) -> None:
+        working_dir.mkdir(parents=True, exist_ok=True)
 
-    prod_input = Template(prod_template).substitute(
-        dt=dt,
-        temp=temp,
-        cut=cut,
-        nstlim=nstlim,
-        ntpr=ntpr,
-        ntwx=ntwx,
-        ntwr=ntwr,
-        mask=mask
-    )
-  
-    for i in range(1, num_seeds + 1):
-        '''Randomization takes the output coordinates of the last equilibration step and resets the velocities.
-        The output coordinates are saved as rand{seed}.ncrst'''
-        ncrst = Path(working_dir) / f"eq{n_eq_runs}.ncrst"
-        run_pmemd(rand_input, prmtop, ncrst, working_dir, f"seed{i}")
+        num_seeds = self.cfg.num_seeds
+        temp = self.cfg.temp
+        dt = self.cfg.dt
+        rand_time = self.cfg.rand_time
+        prod_time = self.cfg.prod_time
+        prod_freq = self.cfg.prod_freq
+        cut = self.cfg.cut
 
-        '''Production run takes the output coordinates of the last equilibration step and runs for a long time. 
-        The output coordinates are saved as prod{seed}.ncrst'''
-        ncrst = Path(working_dir) / f"seed{i}.ncrst"
-        run_pmemd(prod_input, prmtop, ncrst, working_dir, f"prod{i}")
+        nstlim = int((rand_time) / dt)
+        ntpr = ntwx = ntwr = int(nstlim // 1000) or 10000
 
-        print ("Finished full run with seed {i}")
+        rand_input = Template(rand_template).substitute(
+            dt=dt,
+            temp=temp,
+            cut=cut,
+            nstlim=nstlim,
+            ntpr=ntpr,
+            ntwx=ntwx,
+            ntwr=ntwr,
+            mask=mask,
+        )
+
+        nstlim = int((prod_time) / dt)
+        ntpr = ntwx = ntwr = int(nstlim // prod_freq) or 10000
+
+        prod_input = Template(prod_template).substitute(
+            dt=dt,
+            temp=temp,
+            cut=cut,
+            nstlim=nstlim,
+            ntpr=ntpr,
+            ntwx=ntwx,
+            ntwr=ntwr,
+            mask=mask,
+        )
+
+        for i in range(1, num_seeds + 1):
+            ncrst = working_dir / f"eq{last_eq_ncrst.stem.replace('eq','')}.ncrst" if last_eq_ncrst else working_dir / "heat.ncrst"
+            run_pmemd(rand_input, prmtop, ncrst, working_dir, f"seed{i}")
+
+            ncrst = working_dir / f"seed{i}.ncrst"
+            run_pmemd(prod_input, prmtop, ncrst, working_dir, f"prod{i}")
+
+            print(f"Finished full run with seed {i}")

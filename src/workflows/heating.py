@@ -2,54 +2,51 @@ import os
 from string import Template
 from pathlib import Path
 
-from src.config import TEMPLATE_DIR
 from src.ambertools.run_pmemd import run_pmemd
-from configs.config_loader import load_config
 
-with open(TEMPLATE_DIR / "heat_template.txt") as f:
+# Load template
+with open(Path(__file__).resolve().parents[1] / "templates" / "heat_template.txt") as f:
     heat_template = f.read()
 
-def heat(prmtop, mask, working_dir, cfg, n_min_runs):
+'''Heating takes the output coordinates of the last minimization step.
+There is only 1 heating step, so the output coordinates are saved as heat.ncrst'''
 
-    # Load heating parameters from config file
-    dt: float = cfg["dt"]
-    temp1: float = cfg["temp1"]
-    temp2: float = cfg["temp2"]
-    heat_time1: float = cfg["heat_time1"] # in ps
-    heat_time2: float = cfg["heat_time2"] # in ps
-    total_heat_time: float = cfg["total_heat_time"] # in ps
-    cut: float = cfg["cut"]
-    restraint: float = cfg["restraint"] # only 1 step of heating, so only 1 restraint value
+class HeatingWorkflow:
+    def __init__(self, cfg):
+        self.cfg = cfg
 
-    # Calculate variables for heat input template
-    nstlim = int((total_heat_time) / dt) # convert time from ps to steps
-    ntpr = ntwx = ntwr = int(nstlim // 1000) # print/write frequencies (every 1000 steps)
+    def run(self, prmtop: Path, mask: str, working_dir: Path, last_min_ncrst: Path):
+        working_dir.mkdir(parents=True, exist_ok=True)
 
-    # Make sure the folder exists and contains the necessary files
-    if not os.path.exists(working_dir):
-        os.makedirs(working_dir)
+        dt = self.cfg.dt
+        temp1 = self.cfg.temp1
+        temp2 = self.cfg.temp2
+        heat_time1 = self.cfg.heat_time1
+        heat_time2 = self.cfg.heat_time2
+        total_heat_time = self.cfg.total_heat_time
+        cut = self.cfg.cut
+        restraint = self.cfg.restraint
 
-    '''Heating takes the output coordinates of the last minimization step.
-    There is only 1 heating step, so the output coordinates are saved as heat.ncrst'''
+        nstlim = int((total_heat_time) / dt)
+        ntpr = ntwx = ntwr = int(nstlim // 1000) or 10000
 
-    heat_input = Template(heat_template).substitute(
-        dt=dt,
-        temp1=temp1,
-        temp2=temp2,
-        heat_time1=heat_time1,
-        heat_time2=heat_time2,
-        cut=cut,
-        restraint=restraint,
-        nstlim=nstlim,
-        ntpr=ntpr,
-        ntwx=ntwx,
-        ntwr=ntwr,
-        istep1=int((heat_time1) / dt), # convert time from ps to steps
-        istep2=int((heat_time2) / dt), # convert time from ps to steps
-        mask=mask
-    )
+        heat_input = Template(heat_template).substitute(
+            dt=dt,
+            temp1=temp1,
+            temp2=temp2,
+            heat_time1=heat_time1,
+            heat_time2=heat_time2,
+            cut=cut,
+            restraint=restraint,
+            nstlim=nstlim,
+            ntpr=ntpr,
+            ntwx=ntwx,
+            ntwr=ntwr,
+            istep1=int((heat_time1) / dt),
+            istep2=int((heat_time2) / dt),
+            mask=mask,
+        )
 
-    ncrst = Path(working_dir) / f"min{n_min_runs}.ncrst"
-    run_pmemd(heat_input, prmtop, ncrst, working_dir,"heat")
+        run_pmemd(heat_input, prmtop, last_min_ncrst, working_dir, "heat")
 
-    print ("Heating completed")
+        return working_dir / "heat.ncrst"

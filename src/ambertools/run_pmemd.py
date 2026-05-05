@@ -9,17 +9,15 @@ if not AMBERHOME:
 
 def run_pmemd(mdin, prmtop, inpcrd, working_dir, stepname):
     def _run():
-        # Write the input file
+
         mdin_path = Path(working_dir) / f"{stepname}.in"
         mdin_path.write_text(mdin)
 
-        # Paths for output files
         out = Path(working_dir) / f"{stepname}.out"
         ncrst = Path(working_dir) / f"{stepname}.ncrst"
         nc = Path(working_dir) / f"{stepname}.nc"
         mdinfo = Path(working_dir) / f"{stepname}.info"
         
-        # Main pmemd.cuda command
         pmemd_cmd = [
         "pmemd.cuda",
         "-AllowSmallBox",
@@ -36,10 +34,8 @@ def run_pmemd(mdin, prmtop, inpcrd, working_dir, stepname):
         result = subprocess.run(pmemd_cmd, capture_output=True, text=True)
 
         if result.returncode != 0:
-            print(f"PMEMD FAILED: {result.stdout}")
-            print(f"STDOUT: {result.stdout}")
-            print(f"STDERR: {result.stderr}")
+            raise RuntimeError(f"pmemd failed step={stepname}: {result.stderr}\n{result.stdout}")
         else:
             print("PMEMD SUCCESS")
-    # Track time
+    # Track time per step
     return timed(stepname, _run)
