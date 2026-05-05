@@ -4,10 +4,6 @@ from pathlib import Path
 
 from amber_pipeline.ambertools.run_pmemd import run_pmemd
 
-# Load template
-with open(Path(__file__).resolve().parents[1] / "templates" / "eq_template.txt") as f:
-    eq_template = f.read()
-
 '''Equilibration n runs.
 The first run takes the output coordinates of the heating run.
 Each subsequent run takes the output coordinates of the previous run.
@@ -16,8 +12,10 @@ The output coordinates are saved as eq{run}.ncrst'''
 class EquilibrationWorkflow:
     def __init__(self, cfg):
         self.cfg = cfg
+        with open(Path(__file__).resolve().parents[1] / "templates" / "eq_template.txt") as f:
+            self.eq_template = f.read()
 
-    def run(self, prmtop: Path, mask: str, working_dir: Path) -> Path:
+    def run(self, prmtop: Path, mask: str, working_dir: Path, last_heat_ncrst: Path) -> Path:
         working_dir.mkdir(parents=True, exist_ok=True)
 
         n_eq_runs = self.cfg.n_eq_runs
@@ -32,7 +30,7 @@ class EquilibrationWorkflow:
 
         last_ncrst = None
         for run in range(1, n_eq_runs + 1):
-            eq_input = Template(eq_template).substitute(
+            eq_input = Template(self.eq_template).substitute(
                 dt=dt,
                 temp=temp,
                 cut=cut,
@@ -44,7 +42,7 @@ class EquilibrationWorkflow:
                 mask=mask,
             )
             if run == 1:
-                ncrst = working_dir / f"heat.ncrst"
+                ncrst = last_heat_ncrst
                 run_pmemd(eq_input, prmtop, ncrst, working_dir, f"eq{run}")
             else:
                 ncrst = working_dir / f"eq{run - 1}.ncrst"

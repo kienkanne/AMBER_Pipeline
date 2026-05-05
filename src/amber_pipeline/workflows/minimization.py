@@ -4,10 +4,6 @@ from pathlib import Path
 
 from amber_pipeline.ambertools.run_pmemd import run_pmemd
 
-# Load template
-with open(Path(__file__).resolve().parents[1] / "templates" / "min_template.txt") as f:
-    min_template = f.read()
-
 ''' Minimization n runs. 
 The first run takes the input coordinates.
 Each subsequent run takes the output coordinates of the previous run. 
@@ -16,6 +12,8 @@ The output coordinates are saved as min{run}.ncrst'''
 class MinimizationWorkflow:
     def __init__(self, cfg):
         self.cfg = cfg
+        with open(Path(__file__).resolve().parents[1] / "templates" / "min_template.txt") as f:
+            self.min_template = f.read()
 
     def run(self, prmtop: Path, inpcrd: Path, working_dir: Path) -> Path:
         working_dir.mkdir(parents=True, exist_ok=True)
@@ -28,7 +26,7 @@ class MinimizationWorkflow:
 
         last_ncrst = None
         for run in range(1, n_min_runs + 1):
-            min_input = Template(min_template).substitute(
+            min_input = Template(self.min_template).substitute(
                 ncyc=ncyc,
                 maxcyc=maxcyc,
                 cut=cut,

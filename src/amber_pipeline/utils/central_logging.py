@@ -12,12 +12,12 @@ def setup_all_logs(prj_name: str, logger_path: Path, manifest_path: Path, state_
     return (logger, manifest, state)
 
 # Central running and logging wrapper
-def run_stage(logs, stage_name, func, *args, last=False, **kwargs):
+def central_run_stage(logs, stage_name, func, *args, **kwargs):
     logger, manifest, state = logs
 
     if state.is_done(stage_name):
         logger.info(f"{stage_name} already done, skipping")
-        return None
+        return state.get_output(stage_name)
 
     try:
         logger.info(f"{stage_name} started")
@@ -36,9 +36,5 @@ def run_stage(logs, stage_name, func, *args, last=False, **kwargs):
         logger.exception(f"{stage_name} failed")
         manifest.finalize(success=False)
         raise
-
-    if last:
-        manifest.finalize(success=True)
-        logger.info("Pipeline successful")
 
     return result

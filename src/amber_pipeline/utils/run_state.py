@@ -24,10 +24,6 @@ class RunState:
         with open(self.path, "w") as f:
             json.dump(self.state, f, indent=2)
 
-    def mark_done(self, stage):
-        self.state[stage] = "done"
-        self.save()
-
     def mark_running(self, stage):
         self.state[stage] = "running"
         self.save()
@@ -36,5 +32,15 @@ class RunState:
         self.state[stage] = "failed"
         self.save()
 
-    def is_done(self, stage):
-        return self.state.get(stage) == "done"
+    def mark_done(self, stage: str, output=None):
+        self.state[stage] = {"status": "done", "output": str(output) if output else None}
+        self.save()
+
+    def get_output(self, stage: str):
+        entry = self.state.get(stage, {})
+        val = entry.get("output") if isinstance(entry, dict) else None
+        return Path(val) if val else None
+    
+    def is_done(self, stage: str) -> bool:
+        entry = self.state.get(stage, {})
+        return (entry.get("status") == "done") if isinstance(entry, dict) else (entry == "done")

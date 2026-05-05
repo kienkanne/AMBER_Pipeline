@@ -1,7 +1,6 @@
 import os
 import subprocess
 from pathlib import Path
-from amber_pipeline.utils.timing import timed
 
 AMBERHOME = os.environ.get("AMBERHOME")
 if not AMBERHOME:
@@ -31,7 +30,7 @@ def run_pmemd(mdin, prmtop, inpcrd, working_dir, stepname):
         "-x", str(nc),
         "-inf", str(mdinfo)
         ]
-        result = subprocess.run(pmemd_cmd, capture_output=True, text=True, check=True)
+        result = subprocess.run(pmemd_cmd, capture_output=True, text=True)
 
         stdout = working_dir / f"stdout_{stepname}.log"
         stderr = working_dir / f"stderr_{stepname}.log"
@@ -44,6 +43,6 @@ def run_pmemd(mdin, prmtop, inpcrd, working_dir, stepname):
         if result.returncode != 0:
             raise RuntimeError(f"pmemd failed step={stepname}: {result.stderr}\n{result.stdout}")
         else:
-            print("PMEMD SUCCESS")
-    # Track time per step
-    return timed(stepname, _run)
+            return True
+
+    return _run()

@@ -63,5 +63,5 @@ class RootConfig(BaseModel):
 def load_config(path):
     import yaml
     with open(path) as f:
-        data = yaml.safe_load(open(path))
+        data = yaml.safe_load(f)
     return RootConfig.model_validate(data)

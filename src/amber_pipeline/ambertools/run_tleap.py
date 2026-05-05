@@ -10,8 +10,7 @@ def run_tleap(tleap_input: str) -> str:
         ["tleap", "-f", "-"],
         input=tleap_input,
         capture_output=True,
-        text=True,
-        check=True
+        text=True
     )
 
     if result.returncode != 0:

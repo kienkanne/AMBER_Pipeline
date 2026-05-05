@@ -3,16 +3,14 @@ from pathlib import Path
 
 from amber_pipeline.ambertools.run_pmemd import run_pmemd
 
-# Load template
-with open(Path(__file__).resolve().parents[1] / "templates" / "heat_template.txt") as f:
-    heat_template = f.read()
-
 '''Heating takes the output coordinates of the last minimization step.
 There is only 1 heating step, so the output coordinates are saved as heat.ncrst'''
 
 class HeatingWorkflow:
     def __init__(self, cfg):
         self.cfg = cfg
+        with open(Path(__file__).resolve().parents[1] / "templates" / "heat_template.txt") as f:
+            self.heat_template = f.read()
 
     def run(self, prmtop: Path, mask: str, working_dir: Path, last_min_ncrst: Path):
         working_dir.mkdir(parents=True, exist_ok=True)
@@ -29,7 +27,7 @@ class HeatingWorkflow:
         nstlim = int((total_heat_time) / dt)
         ntpr = ntwx = ntwr = int(nstlim // 1000) or 10000
 
-        heat_input = Template(heat_template).substitute(
+        heat_input = Template(self.heat_template).substitute(
             dt=dt,
             temp1=temp1,
             temp2=temp2,

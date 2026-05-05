@@ -3,8 +3,8 @@
 from pathlib import Path
 import sys
 
-from src.config_schema import load_config
-from src.workflows.system_generation import SystemGeneration
+from amber_pipeline.config_schema import load_config
+from amber_pipeline.system_generation import SystemGeneration
 
 def main():
     cfg = load_config(Path(__file__).resolve().parents[1] / "configs" / "config.yaml")
