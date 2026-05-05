@@ -5,9 +5,6 @@ from pathlib import Path
 
 from amber_pipeline.ambertools.run_tleap import run_tleap
 
-with open(Path(__file__).resolve().parents[1] / "templates" / "tleap_template.txt") as f:
-    tleap_template = f.read()
-
 def parse_volume(tleap_output):
     match = re.search(r"Volume:\s+([\d.]+)\s+A\^3", tleap_output)
     if not match:
@@ -17,6 +14,8 @@ def parse_volume(tleap_output):
 class SystemGeneration():
     def __init__(self, cfg):
         self.cfg = cfg
+        with open(Path(__file__).resolve().parents[0] / "templates" / "tleap_template.txt") as f:
+            self.tleap_template = f.read()
 
     def run(self):
         protein_pdb = self.cfg.protein_pdb
@@ -30,7 +29,7 @@ class SystemGeneration():
         box_type = self.cfg.box_type
         box_size = self.cfg.box_size
 
-        tleap_input = Template(tleap_template).substitute(
+        tleap_input = Template(self.tleap_template).substitute(
             protein_pdb=protein_pdb,
             forcefield=forcefield,
             water_model=water_model,
@@ -51,7 +50,7 @@ class SystemGeneration():
         n_ions = round(N_pairs)
 
         # Rerun tleap with the calculated number of ions
-        tleap_input_with_ions = Template(tleap_template).substitute(
+        tleap_input_with_ions = Template(self.tleap_template).substitute(
             protein_pdb=protein_pdb,
             forcefield=forcefield,
             water_model=water_model,
@@ -66,3 +65,4 @@ class SystemGeneration():
         run_tleap(tleap_input_with_ions)
 
         return True
+        
