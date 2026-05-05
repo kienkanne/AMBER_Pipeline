@@ -1,4 +1,9 @@
 import subprocess
+import os
+
+AMBERHOME = os.environ.get("AMBERHOME")
+if not AMBERHOME:
+    raise RuntimeError("AMBERHOME environment variable not set")
 
 def run_tleap(tleap_input: str) -> str:
     result = subprocess.run(

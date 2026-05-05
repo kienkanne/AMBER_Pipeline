@@ -1,4 +1,3 @@
-import subprocess
 import os
 import re
 from string import Template
@@ -15,7 +14,7 @@ def parse_volume(tleap_output):
         raise ValueError("Volume not found in tleap output")
     return float(match.group(1))
 
-class System_Generation():
+class SystemGeneration():
     def __init__(self, cfg):
         self.cfg = cfg
 

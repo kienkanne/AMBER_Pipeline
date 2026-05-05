@@ -9,7 +9,15 @@ def run_pdb4amber(input):
     filename = os.path.basename(input)
     name = filename.split('.')[0]
     # Run pdb4amber command, adding hydrogens with --reduce and skipping water molecules with --dry
-    pdb4amber_cmd = f"pdb4amber -i {input} -o {name}.processed.pdb --reduce --dry"
+    pdb4amber_cmd = [
+        "pdb4amber",
+        "-i",
+        str(input),
+        "-o",
+        str(f"{name}.processed.pdb"),
+        "--reduce",
+        "--dry"
+    ]
     result = subprocess.run(pdb4amber_cmd, capture_output=True, text=True)
 
     if result.returncode != 0:

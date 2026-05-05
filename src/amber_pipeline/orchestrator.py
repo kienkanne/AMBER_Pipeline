@@ -6,7 +6,7 @@ from src.config_schema import RootConfig
 from src.workflows.minimization import MinimizationWorkflow
 from src.workflows.heating import HeatingWorkflow
 from src.workflows.equilibration import EquilibrationWorkflow
-from src.workflows.production import ProductionWorkflow
+from src.workflows.production_seeds import ProductionWorkflow
 from src.utils.timing import timed
 
 class Orchestrator:

@@ -7,7 +7,7 @@ if not AMBERHOME:
 
 def run_cpptraj(input_file):
 
-    cpptraj_cmd = ["cpptraj", "-i", input_file]x``
+    cpptraj_cmd = ["cpptraj", "-i", input_file]
     result = subprocess.run(cpptraj_cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
