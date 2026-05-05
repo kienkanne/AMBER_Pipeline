@@ -1,23 +1,23 @@
 import os
-import glob
 import shutil
 from pathlib import Path
-from src.config_schema import RootConfig
-from src.workflows.minimization import MinimizationWorkflow
-from src.workflows.heating import HeatingWorkflow
-from src.workflows.equilibration import EquilibrationWorkflow
-from src.workflows.production_seeds import ProductionWorkflow
-from src.utils.timing import timed
+from amber_pipeline.config_schema import RootConfig
+from amber_pipeline.workflows.minimization import MinimizationWorkflow
+from amber_pipeline.workflows.heating import HeatingWorkflow
+from amber_pipeline.workflows.equilibration import EquilibrationWorkflow
+from amber_pipeline.workflows.production import ProductionWorkflow
+from amber_pipeline.utils.timing import timed
+from amber_pipeline.utils.logging_utils import setup_logger
+import logging
 
 class Orchestrator:
-    def __init__(self, cfg: RootConfig, job_id: str = None):
+    def __init__(self, cfg: RootConfig):
         self.cfg = cfg
-        self.job_id = job_id or os.environ.get(cfg.common.job_id_env, "local")
-
+        self.pid = os.getpid()
     def _working_dir(self) -> Path:
-        return Path(self.cfg.common.scratch_dir) / f"Job_{self.job_id}"
+        return Path(self.cfg.common.scratch_dir) / f"Job_{self.pid}"
 
-    def run(self, cleanup) -> None:
+    def run(self, cleanup=True) -> None:
         wd = self._working_dir()
         wd.mkdir(parents=True, exist_ok=True)
 
@@ -25,32 +25,39 @@ class Orchestrator:
             prmtop = Path(self.cfg.common.prmtop)
             inpcrd = Path(self.cfg.common.inpcrd)
             mask = str(self.cfg.common.mask)
-            '''
-            # Minimization
+
+            output_dir = Path(__file__).resolve().parents[2] / "outputs" / f"{name}_{self.pid}"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            setup_logger(Path(output_dir) / "run.log")
+            logger = logging.getLogger(__name__)
+
+            logger.info("Starting pipeline")
+
             min_wf = MinimizationWorkflow(self.cfg.minimization)
             last_min = min_wf.run(prmtop, inpcrd, wd)
+            logger.info("Minimization completed")
 
-            # Heating
             heat_wf = HeatingWorkflow(self.cfg.heating)
             heat_wf.run(prmtop, mask, wd, last_min)
+            logger.info("Heating completed")
 
-            # Equilibration
             eq_wf = EquilibrationWorkflow(self.cfg.equilibration)
             last_eq = eq_wf.run(prmtop, mask, wd)
+            logger.info("Equilibration completed")
 
-            # Production
             prod_wf = ProductionWorkflow(self.cfg.production)
             prod_wf.run(prmtop, mask, wd, last_eq)
-            '''
+            logger.info("Production completed")
+
+            # Copy selected files to outputs
             name = os.path.basename(prmtop).split('.')[0]
-            output_dir = Path(__file__).resolve().parents[1] / "outputs" / f"{name}_{self.job_id}"
-            output_dir.mkdir(parents=True, exist_ok=True)
 
             targeted_copy = ["*.out", "prod*.nc", "prod*.ncrst"]
             for target in targeted_copy:
                 for file_path in wd.glob(f"{target}"):
                     shutil.copy2(file_path, output_dir)
-
+                    
+            # Optionally clean up scratch
             if cleanup:
                 shutil.rmtree(wd)
 

@@ -1,5 +1,5 @@
 common:
-  job_id_env: JOB_ID
+  job_id_env: JOB_ID_1324312
   outputs_dir: outputs/
   scratch_dir: scratch/
   prmtop: data/ALA.prmtop

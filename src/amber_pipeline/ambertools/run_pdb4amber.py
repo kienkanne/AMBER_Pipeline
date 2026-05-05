@@ -18,7 +18,7 @@ def run_pdb4amber(input):
         "--reduce",
         "--dry"
     ]
-    result = subprocess.run(pdb4amber_cmd, capture_output=True, text=True)
+    result = subprocess.run(pdb4amber_cmd, capture_output=True, text=True, check=True)
 
     if result.returncode != 0:
         print(f"PDB4AMBER FAILED: {result.stderr}")

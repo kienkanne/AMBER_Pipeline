@@ -3,7 +3,7 @@ import re
 from string import Template
 from pathlib import Path
 
-from src.ambertools.run_tleap import run_tleap
+from amber_pipeline.ambertools.run_tleap import run_tleap
 
 with open(Path(__file__).resolve().parents[1] / "templates" / "tleap_template.txt") as f:
     tleap_template = f.read()

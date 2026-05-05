@@ -1,7 +1,7 @@
 from pathlib import Path
 from string import Template
 
-from src.ambertools.run_pmemd import run_pmemd
+from amber_pipeline.ambertools.run_pmemd import run_pmemd
 
 with open(Path(__file__).resolve().parents[1] / "templates" / "rand_template.txt") as f:
     rand_template = f.read()
